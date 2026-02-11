@@ -1,149 +1,117 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RILMA: Peligro en la Cosecha</title>
+    <title>RILMA GAME</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
-        body { 
-            background: #87CEEB; 
-            overflow: hidden; 
-            height: 100vh; 
-            font-family: 'Arial Black', sans-serif; 
-            transition: background 0.1s;
+        body { background: #87CEEB; overflow: hidden; height: 100vh; font-family: sans-serif; }
+        
+        #marcador {
+            position: absolute; top: 10px; width: 100%; text-align: center;
+            font-weight: bold; font-size: 22px; z-index: 10; color: #fff;
+            text-shadow: 2px 2px #000;
         }
-        #ui {
-            position: absolute;
-            top: 20px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 10;
-            pointer-events: none;
+
+        #rilma {
+            position: absolute; bottom: 60px; left: 50%;
+            font-size: 70px; transform: translateX(-50%); z-index: 5;
         }
-        #score-container {
-            background: #ffffff;
-            padding: 10px 30px;
-            border: 4px solid #2e7d32;
-            border-radius: 15px;
-            box-shadow: 0 6px 0px #1b5e20;
-            font-size: 26px;
-            color: #2e7d32;
-            text-align: center;
-        }
-        #rilma-name { color: #e91e63; font-size: 32px; display: block; }
-        #lives { font-size: 24px; margin-top: 10px; }
-        #player {
-            position: absolute;
-            bottom: 60px;
-            left: 50%;
-            font-size: 80px;
-            transform: translateX(-50%);
-            z-index: 5;
-        }
-        .item { position: absolute; font-size: 45px; z-index: 4; }
-        #ground {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 60px;
-            background: #4CAF50;
-            border-top: 8px solid #388E3C;
-        }
-        .damage-flash { background: #ff4444 !important; }
+
+        .objeto { position: absolute; font-size: 40px; z-index: 4; }
+        #suelo { position: absolute; bottom: 0; width: 100%; height: 50px; background: #4CAF50; }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        <div id="score-container">
-            <span id="rilma-name">RILMA</span>
-            FRUTAS: <span id="pts">0</span>
-        </div>
-        <div id="lives">❤️❤️❤️</div>
+    <div id="marcador">
+        RILMA<br>
+        FRUTAS: <span id="puntos">0</span> | VIDAS: <span id="vidas">❤️❤️❤️</span>
     </div>
 
-    <div id="player">👩‍🌾</div>
-    <div id="ground"></div>
+    <div id="rilma">👩‍🌾</div>
+    <div id="suelo"></div>
 
     <script>
-        const player = document.getElementById('player');
-        const ptsDisplay = document.getElementById('pts');
-        const livesDisplay = document.getElementById('lives');
-        const fruitIcons = ["🍎", "🍌", "🍓", "🍊", "🍇"];
-        
-        let score = 0;
-        let lives = 3;
-        let speed = 4;
+        // Variables principales
+        var score = 0;
+        var lives = 3;
+        var speed = 4;
+        var rilma = document.getElementById('rilma');
+        var ptsTxt = document.getElementById('puntos');
+        var vdsTxt = document.getElementById('vidas');
 
-        function handleMove(e) {
-            const x = e.touches ? e.touches[0].clientX : e.clientX;
-            if (x > 50 && x < window.innerWidth - 50) {
-                player.style.left = x + 'px';
-            }
+        // Función para mover a RILMA
+        function mover(e) {
+            var x = e.touches ? e.touches[0].clientX : e.clientX;
+            rilma.style.left = x + 'px';
         }
 
-        document.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, { passive: false });
-        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', function(e) { e.preventDefault(); mover(e); }, { passive: false });
+        document.addEventListener('mousemove', mover);
 
-        function createItem() {
+        // Función para crear frutas y bombas
+        function crear() {
             if (lives <= 0) return;
 
-            const item = document.createElement('div');
-            item.className = 'item';
-            const isBomb = Math.random() < 0.20;
-            item.innerHTML = isBomb ? "💣" : fruitIcons[Math.floor(Math.random() * fruitIcons.length)];
-            item.style.left = Math.random() * (window.innerWidth - 60) + 30 + 'px';
-            item.style.top = '-60px';
-            document.body.appendChild(item);
+            var obj = document.createElement('div');
+            obj.className = 'objeto';
+            
+            // 20% probabilidad de bomba
+            var esBomba = Math.random() < 0.2;
+            obj.innerHTML = esBomba ? "💣" : "🍎";
+            
+            obj.style.left = Math.random() * (window.innerWidth - 50) + "px";
+            obj.style.top = "-50px";
+            document.body.appendChild(obj);
 
-            let top = -60;
-            const fallInterval = setInterval(() => {
-                top += speed;
-                item.style.top = top + 'px';
+            var y = -50;
+            var caer = setInterval(function() {
+                y += speed;
+                obj.style.top = y + "px";
 
-                const pRect = player.getBoundingClientRect();
-                const iRect = item.getBoundingClientRect();
+                var rRect = rilma.getBoundingClientRect();
+                var oRect = obj.getBoundingClientRect();
 
-                if (iRect.bottom > pRect.top + 20 && iRect.left < pRect.right && iRect.right > pRect.left && iRect.top < pRect.bottom) {
-                    if (isBomb) {
+                // Colisión
+                if (oRect.bottom > rRect.top && oRect.left < rRect.right && oRect.right > rRect.left && oRect.top < rRect.bottom) {
+                    if (esBomba) {
                         lives--;
-                        document.body.classList.add('damage-flash');
-                        setTimeout(() => document.body.classList.remove('damage-flash'), 100);
                     } else {
                         score++;
-                        ptsDisplay.innerText = score;
-                        if (score % 10 === 0) speed += 0.7;
+                        ptsTxt.innerText = score;
+                        if (score % 10 === 0) speed += 1;
                     }
-                    updateLives();
-                    item.remove();
-                    clearInterval(fallInterval);
+                    actualizarVidas();
+                    obj.remove();
+                    clearInterval(caer);
                 }
 
-                if (top > window.innerHeight - 60) {
-                    if (!isBomb) {
+                // Suelo
+                if (y > window.innerHeight) {
+                    if (!esBomba) {
                         lives--;
-                        updateLives();
+                        actualizarVidas();
                     }
-                    item.remove();
-                    clearInterval(fallInterval);
+                    obj.remove();
+                    clearInterval(caer);
                 }
             }, 20);
         }
 
-        function updateLives() {
-            let hearts = "";
-            for(let i=0; i<lives; i++) hearts += "❤️";
-            livesDisplay.innerText = hearts || "💀";
+        function actualizarVidas() {
+            var corazones = "";
+            for(var i=0; i<lives; i++) corazones += "❤️";
+            vdsTxt.innerText = corazones || "💀";
             if (lives <= 0) {
-                alert("¡FIN DEL JUEGO!\nRILMA cosechó " + score + " frutas.");
+                alert("JUEGO TERMINADO\nRILMA cosechó: " + score);
                 location.reload();
             }
         }
 
-        setInterval(createItem, 1300);
+        // Lanzar objetos cada 1.5 segundos
+        setInterval(crear, 1500);
     </script>
 </body>
 </html>
