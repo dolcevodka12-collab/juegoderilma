@@ -145,4 +145,39 @@
                 }
 
                 // Si cae al suelo
-                                             
+                if (top > window.innerHeight - 60) {
+                    // Si era fruta y se escapó, pierde vida (opcional, lo dejo para más reto)
+                    if (!isBomb) {
+                        lives--;
+                        updateLivesDisplay();
+                    }
+                    item.remove();
+                    clearInterval(fallInterval);
+                    checkGameOver();
+                }
+            }, 20);
+        }
+
+        function flashDamage() {
+            document.body.classList.add('damage');
+            setTimeout(() => document.body.classList.remove('damage'), 200);
+        }
+
+        function updateLivesDisplay() {
+            let hearts = "";
+            for(let i=0; i<lives; i++) hearts += "❤️";
+            livesDisplay.innerText = hearts || "💀";
+        }
+
+        function checkGameOver() {
+            if (lives <= 0) {
+                alert("¡BOOM! FIN DEL JUEGO\n\nRILMA cosechó " + score + " frutas.");
+                location.reload();
+            }
+        }
+
+        // Generar objetos más rápido conforme sube el nivel
+        setInterval(createItem, 1200);
+    </script>
+</body>
+</html>
