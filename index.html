@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RILMA GAME</title>
+    <title>RILMA: Cosecha Extrema</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
         body { background: #87CEEB; overflow: hidden; height: 100vh; font-family: sans-serif; }
@@ -16,57 +16,60 @@
 
         #rilma {
             position: absolute; bottom: 60px; left: 50%;
-            font-size: 70px; transform: translateX(-50%); z-index: 5;
+            font-size: 75px; transform: translateX(-50%); z-index: 5;
         }
 
-        .objeto { position: absolute; font-size: 40px; z-index: 4; }
-        #suelo { position: absolute; bottom: 0; width: 100%; height: 50px; background: #4CAF50; }
+        .objeto { position: absolute; font-size: 45px; z-index: 4; }
+        #suelo { position: absolute; bottom: 0; width: 100%; height: 50px; background: #4CAF50; border-top: 5px solid #2e7d32; }
     </style>
 </head>
 <body>
 
     <div id="marcador">
-        RILMA<br>
-        FRUTAS: <span id="puntos">0</span> | VIDAS: <span id="vidas">❤️❤️❤️</span>
+        RILMA - COSECHA RÁPIDA<br>
+        PUNTOS: <span id="puntos">0</span> | VIDAS: <span id="vidas">❤️❤️❤️</span>
     </div>
 
     <div id="rilma">👩‍🌾</div>
     <div id="suelo"></div>
 
     <script>
-        // Variables principales
         var score = 0;
         var lives = 3;
-        var speed = 4;
+        var speed = 6; // VELOCIDAD INICIAL MÁS ALTA (Antes era 4)
         var rilma = document.getElementById('rilma');
         var ptsTxt = document.getElementById('puntos');
         var vdsTxt = document.getElementById('vidas');
+        
+        // Más variedad de frutas
+        var frutas = ["🍎", "🍌", "🍓", "🍊", "🍇", "🍍", "🥭", "🍒", "🥝", "🍉", "🍑"];
 
-        // Función para mover a RILMA
         function mover(e) {
             var x = e.touches ? e.touches[0].clientX : e.clientX;
-            rilma.style.left = x + 'px';
+            // Evita que Rilma se salga de los bordes
+            if (x > 40 && x < window.innerWidth - 40) {
+                rilma.style.left = x + 'px';
+            }
         }
 
         document.addEventListener('touchmove', function(e) { e.preventDefault(); mover(e); }, { passive: false });
         document.addEventListener('mousemove', mover);
 
-        // Función para crear frutas y bombas
         function crear() {
             if (lives <= 0) return;
 
             var obj = document.createElement('div');
             obj.className = 'objeto';
             
-            // 20% probabilidad de bomba
-            var esBomba = Math.random() < 0.2;
-            obj.innerHTML = esBomba ? "💣" : "🍎";
+            // 25% probabilidad de bomba para mayor reto
+            var esBomba = Math.random() < 0.25;
+            obj.innerHTML = esBomba ? "💣" : frutas[Math.floor(Math.random() * frutas.length)];
             
-            obj.style.left = Math.random() * (window.innerWidth - 50) + "px";
-            obj.style.top = "-50px";
+            obj.style.left = Math.random() * (window.innerWidth - 60) + 30 + "px";
+            obj.style.top = "-60px";
             document.body.appendChild(obj);
 
-            var y = -50;
+            var y = -60;
             var caer = setInterval(function() {
                 y += speed;
                 obj.style.top = y + "px";
@@ -74,22 +77,24 @@
                 var rRect = rilma.getBoundingClientRect();
                 var oRect = obj.getBoundingClientRect();
 
-                // Colisión
-                if (oRect.bottom > rRect.top && oRect.left < rRect.right && oRect.right > rRect.left && oRect.top < rRect.bottom) {
+                if (oRect.bottom > rRect.top + 20 && oRect.left < rRect.right && oRect.right > rRect.left && oRect.top < rRect.bottom) {
                     if (esBomba) {
                         lives--;
+                        // Efecto visual de golpe
+                        document.body.style.background = "#ff4444";
+                        setTimeout(function(){ document.body.style.background = "#87CEEB"; }, 100);
                     } else {
                         score++;
                         ptsTxt.innerText = score;
-                        if (score % 10 === 0) speed += 1;
+                        // Aumento de velocidad agresivo cada 5 frutas
+                        if (score % 5 === 0) speed += 0.8;
                     }
                     actualizarVidas();
                     obj.remove();
                     clearInterval(caer);
                 }
 
-                // Suelo
-                if (y > window.innerHeight) {
+                if (y > window.innerHeight - 50) {
                     if (!esBomba) {
                         lives--;
                         actualizarVidas();
@@ -105,13 +110,13 @@
             for(var i=0; i<lives; i++) corazones += "❤️";
             vdsTxt.innerText = corazones || "💀";
             if (lives <= 0) {
-                alert("JUEGO TERMINADO\nRILMA cosechó: " + score);
+                alert("¡FIN DEL JUEGO!\nRILMA logró " + score + " frutas a gran velocidad.");
                 location.reload();
             }
         }
 
-        // Lanzar objetos cada 1.5 segundos
-        setInterval(crear, 1500);
+        // Caen objetos más seguido (cada 1 segundo)
+        setInterval(crear, 1000);
     </script>
 </body>
 </html>
