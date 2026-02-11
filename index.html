@@ -10,10 +10,9 @@
             background: #87CEEB; 
             overflow: hidden; 
             height: 100vh; 
-            font-family: 'Arial Black', Gadget, sans-serif; 
-            transition: background 0.2s;
+            font-family: 'Arial Black', sans-serif; 
+            transition: background 0.1s;
         }
-        
         #ui {
             position: absolute;
             top: 20px;
@@ -35,8 +34,7 @@
             text-align: center;
         }
         #rilma-name { color: #e91e63; font-size: 32px; display: block; }
-        #lives { font-size: 24px; margin-top: 10px; filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.5)); }
-
+        #lives { font-size: 24px; margin-top: 10px; }
         #player {
             position: absolute;
             bottom: 60px;
@@ -44,13 +42,8 @@
             font-size: 80px;
             transform: translateX(-50%);
             z-index: 5;
-            user-select: none;
         }
-        .item {
-            position: absolute;
-            font-size: 45px;
-            z-index: 4;
-        }
+        .item { position: absolute; font-size: 45px; z-index: 4; }
         #ground {
             position: absolute;
             bottom: 0;
@@ -59,8 +52,7 @@
             background: #4CAF50;
             border-top: 8px solid #388E3C;
         }
-        /* Clase para el parpadeo de daño */
-        .damage { background: #ff4444 !important; }
+        .damage-flash { background: #ff4444 !important; }
     </style>
 </head>
 <body>
@@ -80,11 +72,11 @@
         const player = document.getElementById('player');
         const ptsDisplay = document.getElementById('pts');
         const livesDisplay = document.getElementById('lives');
-        const fruitIcons = ["🍎", "🍌", "🍓", "🍊", "🍇", "🍍"];
+        const fruitIcons = ["🍎", "🍌", "🍓", "🍊", "🍇"];
         
         let score = 0;
         let lives = 3;
-        let speed = 4; // Velocidad inicial
+        let speed = 4;
 
         function handleMove(e) {
             const x = e.touches ? e.touches[0].clientX : e.clientX;
@@ -101,11 +93,8 @@
 
             const item = document.createElement('div');
             item.className = 'item';
-            
-            // Probabilidad: 20% de que sea una bomba, 80% fruta
             const isBomb = Math.random() < 0.20;
             item.innerHTML = isBomb ? "💣" : fruitIcons[Math.floor(Math.random() * fruitIcons.length)];
-            
             item.style.left = Math.random() * (window.innerWidth - 60) + 30 + 'px';
             item.style.top = '-60px';
             document.body.appendChild(item);
@@ -118,66 +107,43 @@
                 const pRect = player.getBoundingClientRect();
                 const iRect = item.getBoundingClientRect();
 
-                // Colisión con RILMA
-                if (iRect.bottom > pRect.top + 20 && 
-                    iRect.left < pRect.right && 
-                    iRect.right > pRect.left && 
-                    iRect.top < pRect.bottom) {
-                    
+                if (iRect.bottom > pRect.top + 20 && iRect.left < pRect.right && iRect.right > pRect.left && iRect.top < pRect.bottom) {
                     if (isBomb) {
-                        // TOCÓ BOMBA
                         lives--;
-                        flashDamage();
-                        updateLivesDisplay();
+                        document.body.classList.add('damage-flash');
+                        setTimeout(() => document.body.classList.remove('damage-flash'), 100);
                     } else {
-                        // RECOGIÓ FRUTA
                         score++;
                         ptsDisplay.innerText = score;
-                        // AUMENTAR VELOCIDAD cada 10 frutas
-                        if (score > 0 && score % 10 === 0) {
-                            speed += 0.8;
-                        }
+                        if (score % 10 === 0) speed += 0.7;
                     }
-                    
+                    updateLives();
                     item.remove();
                     clearInterval(fallInterval);
-                    checkGameOver();
                 }
 
-                // Si cae al suelo
                 if (top > window.innerHeight - 60) {
-                    // Si era fruta y se escapó, pierde vida (opcional, lo dejo para más reto)
                     if (!isBomb) {
                         lives--;
-                        updateLivesDisplay();
+                        updateLives();
                     }
                     item.remove();
                     clearInterval(fallInterval);
-                    checkGameOver();
                 }
             }, 20);
         }
 
-        function flashDamage() {
-            document.body.classList.add('damage');
-            setTimeout(() => document.body.classList.remove('damage'), 200);
-        }
-
-        function updateLivesDisplay() {
+        function updateLives() {
             let hearts = "";
             for(let i=0; i<lives; i++) hearts += "❤️";
             livesDisplay.innerText = hearts || "💀";
-        }
-
-        function checkGameOver() {
             if (lives <= 0) {
-                alert("¡BOOM! FIN DEL JUEGO\n\nRILMA cosechó " + score + " frutas.");
+                alert("¡FIN DEL JUEGO!\nRILMA cosechó " + score + " frutas.");
                 location.reload();
             }
         }
 
-        // Generar objetos más rápido conforme sube el nivel
-        setInterval(createItem, 1200);
+        setInterval(createItem, 1300);
     </script>
 </body>
 </html>
