@@ -3,29 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RILMA: Cosecha Extrema</title>
+    <title>RILMA: Evolución Total</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
-        body { background: #87CEEB; overflow: hidden; height: 100vh; font-family: sans-serif; }
+        
+        /* El fondo cambia suavemente gracias a esta transición */
+        body { 
+            background: #87CEEB; 
+            overflow: hidden; 
+            height: 100vh; 
+            font-family: 'Arial Black', sans-serif; 
+            transition: background 3s ease; 
+        }
+        
         #marcador {
             position: absolute; top: 10px; width: 100%; text-align: center;
-            font-weight: bold; font-size: 20px; z-index: 10; color: #fff;
+            font-weight: bold; font-size: 18px; z-index: 10; color: #fff;
             text-shadow: 2px 2px #000; pointer-events: none;
         }
+
+        #best-score { color: #FFD700; font-size: 16px; display: block; margin-top: 5px; }
+
         #rilma {
             position: absolute; bottom: 60px; left: 50%;
-            font-size: 70px; transform: translateX(-50%); z-index: 5;
+            font-size: 75px; transform: translateX(-50%); z-index: 5;
         }
-        .objeto { position: absolute; font-size: 45px; z-index: 4; }
-        #suelo { position: absolute; bottom: 0; width: 100%; height: 50px; background: #4CAF50; border-top: 5px solid #2e7d32; }
+
+        .objeto { position: absolute; font-size: 45px; z-index: 4; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.2)); }
+        
+        #suelo { 
+            position: absolute; bottom: 0; width: 100%; height: 50px; 
+            background: #4CAF50; border-top: 5px solid #2E7D32; 
+        }
+
+        /* Nubes para que el cielo no sea plano */
+        .nube {
+            position: absolute; background: white; border-radius: 50px;
+            opacity: 0.6; z-index: 1; animation: moverNubes 25s linear infinite;
+        }
+
+        @keyframes moverNubes {
+            from { left: -150px; }
+            to { left: 100%; }
+        }
     </style>
 </head>
 <body>
 
     <div id="marcador">
-        RILMA - COSECHA RÁPIDA<br>
+        RILMA - COSECHA PROFESIONAL<br>
         PUNTOS: <span id="puntos">0</span> | VIDAS: <span id="vidas">❤️❤️❤️</span>
+        <span id="best-score">🏆 RÉCORD: <span id="record-num">0</span></span>
     </div>
+
+    <div class="nube" style="top:15%; width:120px; height:40px;"></div>
+    <div class="nube" style="top:5%; width:80px; height:30px; animation-delay: 10s;"></div>
 
     <div id="rilma">👩‍🌾</div>
     <div id="suelo"></div>
@@ -33,11 +65,17 @@
     <script>
         var score = 0;
         var lives = 3;
-        var speed = 7; // VELOCIDAD ALTA desde el inicio
+        var speed = 7; 
         var rilma = document.getElementById('rilma');
         var ptsTxt = document.getElementById('puntos');
         var vdsTxt = document.getElementById('vidas');
-        var frutas = ["🍎", "🍌", "🍓", "🍊", "🍇", "🍍", "🥭", "🍒", "🍉"];
+        var recordTxt = document.getElementById('record-num');
+        
+        var frutas = ["🍎", "🍌", "🍓", "🍊", "🍇", "🍍", "🥭", "🍒", "🥝", "🍉", "🍑"];
+
+        // Cargar Récord
+        var highScore = localStorage.getItem("rilmaHighScore") || 0;
+        recordTxt.innerText = highScore;
 
         function mover(e) {
             var x = e.touches ? e.touches[0].clientX : e.clientX;
@@ -48,6 +86,17 @@
 
         document.addEventListener('touchmove', function(e) { e.preventDefault(); mover(e); }, { passive: false });
         document.addEventListener('mousemove', mover);
+
+        // FUNCIÓN DE CLIMA (ACTUALIZADA)
+        function actualizarClima() {
+            if (score >= 30) {
+                document.body.style.background = "#0d1b2a"; // Noche profunda
+            } else if (score >= 15) {
+                document.body.style.background = "#e67e22"; // Atardecer naranja
+            } else {
+                document.body.style.background = "#87CEEB"; // Día azul
+            }
+        }
 
         function crear() {
             if (lives <= 0) return;
@@ -69,12 +118,19 @@
                 if (oRect.bottom > rRect.top + 20 && oRect.left < rRect.right && oRect.right > rRect.left && oRect.top < rRect.bottom) {
                     if (esBomba) {
                         lives--;
-                        document.body.style.background = "red";
-                        setTimeout(function(){ document.body.style.background = "#87CEEB"; }, 100);
+                        document.body.style.filter = "invert(20%)"; // Efecto visual de daño
+                        setTimeout(function(){ document.body.style.filter = "none"; }, 150);
                     } else {
                         score++;
                         ptsTxt.innerText = score;
-                        if (score % 5 === 0) speed += 1; // MÁS RÁPIDO CADA 5 PUNTOS
+                        actualizarClima(); // Cambia el clima según puntos
+                        if (score % 5 === 0) speed += 0.8;
+                        
+                        // SECRETO: Rilma se convierte en superheroína a los 50 puntos
+                        if (score === 50) {
+                            rilma.innerHTML = "🦸‍♀️";
+                            alert("¡RILMA EVOLUCIONÓ!");
+                        }
                     }
                     actualizarVidas();
                     obj.remove();
@@ -93,13 +149,19 @@
             var corazones = "";
             for(var i=0; i<lives; i++) corazones += "❤️";
             vdsTxt.innerText = corazones || "💀";
+            
             if (lives <= 0) {
-                alert("FIN DEL JUEGO\nPUNTOS: " + score);
+                if (score > highScore) {
+                    localStorage.setItem("rilmaHighScore", score);
+                    alert("🏆 ¡NUEVO RÉCORD!\nCosechaste " + score + " frutas.");
+                } else {
+                    alert("¡FIN DEL JUEGO!\nPuntos: " + score);
+                }
                 location.reload();
             }
         }
 
-        setInterval(crear, 900); // Genera objetos más seguido
+        setInterval(crear, 1000);
     </script>
 </body>
 </html>
