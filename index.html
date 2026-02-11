@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RILMA: La Gran Cosecha</title>
+    <title>RILMA: Peligro en la Cosecha</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
         body { 
@@ -11,9 +11,9 @@
             overflow: hidden; 
             height: 100vh; 
             font-family: 'Arial Black', Gadget, sans-serif; 
+            transition: background 0.2s;
         }
         
-        /* Interfaz de Usuario Personalizada */
         #ui {
             position: absolute;
             top: 20px;
@@ -37,7 +37,6 @@
         #rilma-name { color: #e91e63; font-size: 32px; display: block; }
         #lives { font-size: 24px; margin-top: 10px; filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.5)); }
 
-        /* RILMA y Elementos */
         #player {
             position: absolute;
             bottom: 60px;
@@ -47,7 +46,7 @@
             z-index: 5;
             user-select: none;
         }
-        .fruit {
+        .item {
             position: absolute;
             font-size: 45px;
             z-index: 4;
@@ -60,6 +59,8 @@
             background: #4CAF50;
             border-top: 8px solid #388E3C;
         }
+        /* Clase para el parpadeo de daño */
+        .damage { background: #ff4444 !important; }
     </style>
 </head>
 <body>
@@ -83,13 +84,11 @@
         
         let score = 0;
         let lives = 3;
-        let speed = 4;
+        let speed = 4; // Velocidad inicial
 
         function handleMove(e) {
             const x = e.touches ? e.touches[0].clientX : e.clientX;
-            const containerWidth = window.innerWidth;
-            // Ajuste para que RILMA no se salga de la pantalla
-            if (x > 50 && x < containerWidth - 50) {
+            if (x > 50 && x < window.innerWidth - 50) {
                 player.style.left = x + 'px';
             }
         }
@@ -97,61 +96,53 @@
         document.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, { passive: false });
         document.addEventListener('mousemove', handleMove);
 
-        function createFruit() {
+        function createItem() {
             if (lives <= 0) return;
 
-            const f = document.createElement('div');
-            f.className = 'fruit';
-            f.innerHTML = fruitIcons[Math.floor(Math.random() * fruitIcons.length)];
-            f.style.left = Math.random() * (window.innerWidth - 60) + 30 + 'px';
-            f.style.top = '-60px';
-            document.body.appendChild(f);
+            const item = document.createElement('div');
+            item.className = 'item';
+            
+            // Probabilidad: 20% de que sea una bomba, 80% fruta
+            const isBomb = Math.random() < 0.20;
+            item.innerHTML = isBomb ? "💣" : fruitIcons[Math.floor(Math.random() * fruitIcons.length)];
+            
+            item.style.left = Math.random() * (window.innerWidth - 60) + 30 + 'px';
+            item.style.top = '-60px';
+            document.body.appendChild(item);
 
             let top = -60;
             const fallInterval = setInterval(() => {
                 top += speed;
-                f.style.top = top + 'px';
+                item.style.top = top + 'px';
 
                 const pRect = player.getBoundingClientRect();
-                const fRect = f.getBoundingClientRect();
+                const iRect = item.getBoundingClientRect();
 
                 // Colisión con RILMA
-                if (fRect.bottom > pRect.top + 20 && 
-                    fRect.left < pRect.right && 
-                    fRect.right > pRect.left && 
-                    fRect.top < pRect.bottom) {
+                if (iRect.bottom > pRect.top + 20 && 
+                    iRect.left < pRect.right && 
+                    iRect.right > pRect.left && 
+                    iRect.top < pRect.bottom) {
                     
-                    score++;
-                    ptsDisplay.innerText = score;
-                    
-                    if (score % 10 === 0) speed += 0.5; // Aumenta dificultad
-                    
-                    f.remove();
-                    clearInterval(fallInterval);
-                }
-
-                // Si a RILMA se le escapa la fruta
-                if (top > window.innerHeight - 60) {
-                    lives--;
-                    updateLivesDisplay();
-                    f.remove();
-                    clearInterval(fallInterval);
-                    
-                    if (lives <= 0) {
-                        alert("¡FIN DEL JUEGO!\n\nRILMA cosechó " + score + " frutas.");
-                        location.reload();
+                    if (isBomb) {
+                        // TOCÓ BOMBA
+                        lives--;
+                        flashDamage();
+                        updateLivesDisplay();
+                    } else {
+                        // RECOGIÓ FRUTA
+                        score++;
+                        ptsDisplay.innerText = score;
+                        // AUMENTAR VELOCIDAD cada 10 frutas
+                        if (score > 0 && score % 10 === 0) {
+                            speed += 0.8;
+                        }
                     }
+                    
+                    item.remove();
+                    clearInterval(fallInterval);
+                    checkGameOver();
                 }
-            }, 20);
-        }
 
-        function updateLivesDisplay() {
-            let hearts = "";
-            for(let i=0; i<lives; i++) hearts += "❤️";
-            livesDisplay.innerText = hearts || "💀";
-        }
-
-        setInterval(createFruit, 1400);
-    </script>
-</body>
-</html>
+                // Si cae al suelo
+                                             
